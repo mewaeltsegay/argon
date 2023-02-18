@@ -1,0 +1,374 @@
+<div class="mT-10">
+    <div class="bd bgc-white">
+        <div class="peers fxw-nw@lg+ ai-s">
+            <div class="peer peer-greed w-70p@lg+ w-100@lg- p-20">
+                <div class="layers">
+                    <div class="layer w-100 mB-10">
+                        <h6 class="lh-1">Users</h6>
+                    </div>
+                    <div class="layer w-100">
+                        <table id="usersDataTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>User's Name</th>
+                                <th>Department</th>
+                                <th>User Type</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="peer bdL p-20 w-30p@lg+ w-100p@lg-">
+                <div class="layers">
+                    <div class="layer w-100">
+                        <h6 class="lh-1" id="formTitle">Add User</h6>
+                        <div class="mT-30">
+                            <form id="usersForm" onsubmit="saveUser(event)">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name</label>
+                                    <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="user_name">Username</label>
+                                    <input type="text" class="form-control" id="user_name" name="username" placeholder="Username">
+                                </div>
+                                <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="dept">Department</label>
+                                    <select class="form-control" id="dept" name="dept">
+                                        <option disabled selected>Department</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="type">User Type</label>
+                                    <select class="form-control" id="type" name="type">
+                                        <option disabled selected>User Type</option>
+                                        <option value="administration">Administration</option>
+                                        <option value="teacher">Teacher</option>
+                                    </select>
+                                </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm">Confirm</label>
+                                    <input type="password" class="form-control" id="confirm" name="confirm" placeholder="Confirm Password">
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="add">Add</button>
+                            </form>
+                            <form id="reset" onsubmit="resetPassword(event)" hidden disabled>
+                                <input id="user-id" hidden/>
+                                <div class="form-group">
+                                    <label for="new-password">Password</label>
+                                    <input type="password" class="form-control" id="new-password" name="new-password" placeholder="Password">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-confirm">Confirm</label>
+                                    <input type="password" class="form-control" id="new-confirm" name="new-confirm" placeholder="Confirm Password">
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="reset-password">Reset</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var table = $('#usersDataTable').DataTable({
+        rowId: "unique_id",
+        columnDefs: [
+            {
+                targets: 0,
+                data: "Uname",
+                render: function (data){
+                    return ucwords(data)
+                }
+            },
+            {
+                targets: 1,
+                data: "user_name",
+                render: function (data){
+                    return ucwords(data)
+                }
+            },
+            {
+                targets: 2,
+                data: "dept_name",
+                render: function (data){
+                    return ucwords(data)
+                }
+            },
+            {
+                targets: 3,
+                data: "user_type",
+                render: function (data){
+                    return ucwords(data)
+                }
+            },
+            {
+                targets: 4,
+                data: null,
+                width: "9%",
+                render: function (data,type,row,meta){
+                    return `<button class="btn border-0 bg-transparent reset" title="Reset Password"><i class="fa fa-refresh text-primary"></i></button><button title="Delete" class="btn border-0 bg-transparent delete-btn"><i class="fa fa-trash text-danger delete"></i></button>`
+                }
+            }]
+    })
+
+    var fetchUsers = {
+        table: "users left join departments on departments.dept_id = users.dept_id",
+        fields: ["users.unique_id","users.Uname","users.user_name","users.user_type","departments.dept_name"],
+        where: [{
+            "users.unique_id !": `'${JSON.parse(localStorage.getItem('token')).unique_id}'`,
+        }]
+    }
+
+    get(fetchUsers,(res)=>{
+        table.rows.add(res).draw(false)
+    })
+
+    var fetchDepartmetns = {
+        table: "departments",
+        fields: ["dept_id","dept_name"]
+    }
+
+    var dpts = []
+    var dept_list = []
+    var departments = []
+
+    new Promise(resolve => {
+        get(fetchDepartmetns,async (res)=>{
+            for (var i in res){
+                var tmp = {}
+                tmp["value"] = ucwords(res[i].dept_name)
+                tmp["display"] = ucwords(res[i].dept_name)
+                dept_list[ucwords(res[i].dept_name)] = res[i].dept_id
+                departments.push(ucwords(res[i].dept_name))
+                dpts.push(tmp)
+            }
+            resolve('done')
+        })
+    })
+
+    var fetchDepartments = {
+        table: "departments",
+        fields: ["dept_id","dept_name"],
+        order_by: {
+            columns: ["dept_name"],
+            order: "asc"
+        }
+    }
+
+    get(fetchDepartments,(res)=>{
+        for(var i in res){
+            $('#dept').append(`
+                <option did='${res[i].dept_id}'>${res[i].dept_name}</option>
+            `)
+        }
+
+    })
+
+
+
+    table.MakeCellsEditable({
+        "columns": [0,2,3],
+        "inputCss":'form-control-sm',
+        "onUpdate": function (updatedCell,updatedRow,oldValue){
+            var fields = {}
+            if(table.columns(updatedCell.index().column).dataSrc()[0] === "dept_name")
+                fields["dept_id"] = dept_list[updatedCell.data()]
+            else
+                fields[table.columns(updatedCell.index().column).dataSrc()[0]] = updatedCell.data()
+            var data = {
+                table: "users",
+                fields: fields,
+                where: [{
+                    unique_id: "'" + updatedRow.id() + "'"
+                }]
+            }
+            put(data)
+        },
+        "inputTypes": [{
+                column: 2,
+                type: "list-confirm",
+                options: dpts
+            },
+            {
+                "column":3,
+                "type": "list-confirm",
+                "options": [{
+                    value: "teacher",
+                    display: "Teacher"
+                },{
+                    value: "administration",
+                    display: "Administration"
+                }],
+            }
+        ]
+    })
+
+    $.validator.addMethod(
+        "regex",
+        function(value, element, regexp)
+        {
+            if (regexp.constructor != RegExp)
+                regexp = new RegExp(regexp);
+            else if (regexp.global)
+                regexp.lastIndex = 0;
+            return this.optional(element) || regexp.test(value);
+        },
+        "You have used an invalid character."
+    )
+
+    $('#usersForm').validate({
+        rules: {
+            fullName: {
+                required: true,
+                regex: /^[A-Za-z ]*$/,
+                normalizer: function(value) {
+                    return $.trim(value);
+                }
+            },
+            username:{
+                required: true,
+                normalizer: function(value) {
+                    return $.trim(value);
+                },
+                remote: {
+                    url: "api/checkUserName.php",
+                    type: "POST",
+                }
+            },
+            dept: {
+                required: true
+            },
+            type: {
+                required: true
+            },
+            password: {
+                required: true,
+                minlength: 8
+            },
+            confirm: {
+                required: true,
+                minlength: 8,
+                equalTo: "#password"
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid",
+        messages: {
+            username: {
+                remote: "Username already in use. Try another one."
+            }
+        }
+    })
+
+    $('#reset').validate({
+        rules: {
+            "new-password": {
+                required: true,
+                minlength: 8
+            },
+            "new-confirm": {
+                required: true,
+                minlength: 8,
+                equalTo: "#new-password"
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid",
+    })
+
+    function saveUser(event){
+        event.preventDefault()
+
+        if($('#usersForm').valid()){
+            $("#add").empty().append('Adding').append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+
+            var data = {
+                uname: $('#fullName').val(),
+                user_name: $('#user_name').val(),
+                dept_id: $('#dept option:selected').attr('did'),
+                user_type: $('#type option:selected').val(),
+                password: $('#password').val()
+            }
+
+            $.post("api/createUser.php",data,"json").done((res)=>{
+                var responce = JSON.parse(res)
+
+                if(responce.success == "true"){
+                    showNotification("top","center","success","User has been added successfully.")
+                    $("#mainContent").load('views/admin/addUsers.html')
+                }
+                else{
+                    showNotification("top","center","success","Unable to add new user. Try again.")
+                }
+            })
+        }
+    }
+
+    $('#usersDataTable tbody').on( 'click', 'button', function () {
+        if(this.classList.contains('delete-btn')) {
+            if (confirm("Are you sure you want to delete this entry?")) {
+                $(this).empty().append(`<span class="spinner-border spinner-border-sm text-danger"></span>`).prop('disabled')
+                var deleteUser = {
+                    table: "users",
+                    id: $(this).parents('tr').attr("id")
+                }
+
+                $.post("api/deleteUser.php", deleteUser, "json").done((res) => {
+                    var responce = JSON.parse(res)
+
+                    if (responce.success === "true")
+                        table.row($(this).parents("tr")).remove().draw(false)
+                })
+            }
+        }
+        if(this.classList.contains('reset')){
+            $('#formTitle').empty().html('Reset password')
+            $('#usersForm').prop('disabled',true).prop('hidden',true)
+            $('#reset').prop('disabled',false).prop('hidden',false)
+            $('#user-id').val($(this).parents('tr').attr("id"))
+        }
+    } )
+
+    function resetPassword(event){
+        event.preventDefault()
+
+        if($('#reset').valid()){
+            $('#reset-password').empty().append(`Resetting <span class="spinner-border spinner-border-sm text-white"></span>`).prop('disabled')
+            var data = {
+                id: $('#user-id').val(),
+                password: $('#new-password').val()
+            }
+
+            $.post('api/resetPassword.php',data,"json").done((value)=>{
+                var res = JSON.parse(value)
+                console.log(res)
+                if(res.success === "true") {
+                    showNotification('top', 'center', 'success', 'Password Reset.')
+                    document.querySelector('#reset').reset()
+                    $('#reset-password').empty().append(`Reset`).prop('disabled',false)
+                    $('#new-password').removeClass('is-valid')
+                    $('#new-confirm').removeClass('is-valid')
+                    $('#formTitle').empty().html('Add User')
+                    $('#usersForm').prop('disabled',false).prop('hidden',false)
+                    $('#reset').prop('disabled',true).prop('hidden',true)
+                }
+                else
+                    showNotification('top','center','danger','Something went wrong. Try again.')
+            })
+        }
+    }
+</script>

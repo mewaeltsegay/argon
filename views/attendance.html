@@ -1,0 +1,254 @@
+<div id="loading">
+    <div class="spinner"></div>
+</div>
+<div class="bgc-white bd bdrs-3 p-20 mB-20" id="viewable" hidden>
+    <h4 class="c-grey-900 mB-20">Attendance</h4>
+    <table id="attendanceTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+        <tr>
+            <th></th>
+            <th>Monday</th>
+            <th>Tuesday</th>
+            <th>Wednesday</th>
+            <th>Thursday</th>
+            <th>Friday</th>
+        </tr>
+        <tr id="dates">
+            <th>Full Name</th>
+
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+<script>
+
+    $(document).ready(()=>{
+        $("#loading").attr("hidden","hidden")
+        $("#viewable").removeAttr("hidden")
+        var data = {
+            dept_id: JSON.parse(localStorage.getItem("token")).dept_id,
+            academic_year: JSON.parse(localStorage.getItem("token")).academic_year,
+            status: "Enrolled"
+        }
+        if(JSON.parse(localStorage.getItem("token")).dept_id === 1)
+            data["batch"] = JSON.parse(localStorage.getItem("token")).batch
+        var d = moment().day()
+        if(d >= 1 && d <= 5)
+            $.post("./api/prepareAttendance.php",data,"json")
+    })
+</script>
+<script defer>
+    var dates = [moment().day(1).format('DD/MM/YYYY'),moment().day(2).format('DD/MM/YYYY'),moment().day(3).format('DD/MM/YYYY'),moment().day(4).format('DD/MM/YYYY'),moment().day(5).format('DD/MM/YYYY')]
+    for(var i in dates){
+        $("#dates").append(`<th>${dates[i]}</th>`)
+    }
+
+    function getCookie(cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for(let i = 0; i <ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+    }
+
+    var table = $('#attendanceTable').DataTable({
+        rowId: "id",
+        "order": [[ 0, "asc" ]],
+        columnDefs: [
+            {
+                targets: 0,
+                data: null,
+                class: "fw-bold",
+                render: function(data,type,row,meta){
+                    return ucwords(row.first_name + " " + row.middle_name + " " + row.last_name)
+                }
+            },{
+                targets: 1,
+                width: "15%",
+                data: null,
+                render:(data,type,row,meta)=>{
+                    var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [],status: []}
+                    return status("Monday",tmp)
+                }
+            },{
+                targets: 2,
+                width: "15%",
+                data: null,
+                render:(data,type,row,meta)=>{
+                    var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [],status: []}
+                    return status("Tuesday",tmp)
+                }
+            },{
+                targets: 3,
+                width: "15%",
+                data: null,
+                render:(data,type,row,meta)=>{
+                    var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [],status: []}
+                    return status("Wednesday",tmp)
+                }
+            },{
+                targets: 4,
+                width: "15%",
+                data: null,
+                render:(data,type,row,meta)=>{
+                    var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [],status: []}
+                    return status("Thursday",tmp)
+                }
+            },{
+                targets: 5,
+                width: "15%",
+                data: null,
+                render:(data,type,row,meta)=>{
+                    var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [],status: []}
+                    return status("Friday",tmp)
+                }
+            }
+        ]
+    })
+
+    var payload = {
+        table: `trainee_info left join attendance on (attendance.student_id = trainee_info.id and attendance.date >= '${moment().day(1).format("YYYY-MM-DD")}' and attendance.date <= '${moment().day(5).format("YYYY-MM-DD")}')`,
+        fields: ["trainee_info.first_name","trainee_info.middle_name","trainee_info.last_name","trainee_info.id","group_concat(attendance.date,';',attendance.status) as attendance"],
+        where: [{
+            dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+            acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+            "trainee_info.status": "'Enrolled'"
+        }],
+        group_by: ["id"],
+        order_by: {
+            columns: ["first_name","middle_name","last_name"],
+            order: "asc"
+        }
+    }
+
+    if(JSON.parse(localStorage.getItem('token')).dept_id === 1)
+        payload.where[0]["batch"] = JSON.parse(localStorage.getItem('token')).batch
+
+    function attendance(text){
+        var d = text.split(',')
+        var r = []
+        var dates = []
+        var status = []
+        for(var i in d){
+            var d2 = d[i].split(';')
+
+            dates.push(d2[0])
+            status.push(d2[1])
+
+        }
+        r = {
+            dates: dates,
+            status: status
+        }
+
+        return r
+    }
+
+    function status(dayName,tmp){
+        var day = moment().day(dayName).format('YYYY-MM-DD')
+        if(moment().format("dddd") === dayName) {
+            if ($.inArray(day,tmp.dates) !== -1){
+                if(tmp.status[tmp.dates.indexOf(day)] === 'Present')
+                    return `<button class="btn btn-success text-white w-100">Present</button>`
+                else if(tmp.status[tmp.dates.indexOf(day)] === 'Permission')
+                    return `<button class="btn btn-primary text-white w-100">Permission</button>`
+                else
+                    return `<button class="btn btn-danger text-white w-100">Absent</button>`
+            }
+            else{
+                return `<button class="btn btn-danger text-white w-100">Absent</button>`
+            }
+
+        }
+        else{
+            if ($.inArray(day,tmp.dates) !== -1){
+                if(tmp.status[tmp.dates.indexOf(day)] === 'Present')
+                    return `<button class="btn btn-success text-white w-100" disabled>Present</button>`
+                else if(tmp.status[tmp.dates.indexOf(day)] === 'Permission')
+                    return `<button class="btn btn-primary text-white w-100" disabled>Permission</button>`
+                else
+                    return `<button class="btn btn-danger text-white w-100" disabled>Absent</button>`
+            }
+            else{
+                return `<button class="btn btn-danger text-white w-100" disabled>Absent</button>`
+            }
+        }
+    }
+
+    send(payload,table)
+
+    var button
+    var col
+    $('#attendanceTable tbody').on( 'click', 'button', function () {
+        col = table.cell($(this).parents('td')).index().column
+        var title = table.columns(col).header()
+        var tmp = $(title).html().split('/')
+        var newDate = tmp[2] + "-" + tmp[1] + "-" + tmp[0]
+
+        console.log(newDate)
+
+        button = $(this)
+        if($(this).html() == "Absent"){
+            var data = {
+                table: "attendance",
+                fields: {
+                    status: "Present"
+                },
+                where: [{
+                    student_id: $(this).parents('tr').attr('id'),
+                    date: "'" + moment(newDate).format("YYYY-MM-DD") + "'"
+                }]
+            }
+            put(data,callBack)
+
+        }
+        else if($(this).html() == "Present") {
+            var data = {
+                table: "attendance",
+                fields: {
+                    status: "Permission"
+                },
+                where: [{
+                    student_id: $(this).parents('tr').attr('id'),
+                    date: "'" + moment(newDate).format("YYYY-MM-DD") + "'"
+                }]
+            }
+            put(data,callBack)
+        }
+        else {
+            var data = {
+                table: "attendance",
+                fields: {
+                    status: "Absent"
+                },
+                where: [{
+                    student_id: $(this).parents('tr').attr('id'),
+                    date: "'" + moment(newDate).format("YYYY-MM-DD") + "'"
+                }]
+            }
+            put(data,callBack)
+        }
+    } );
+
+    function callBack(success){
+        console.log(success)
+        if(success === "true")
+            if(button.html() === "Absent")
+                button.removeClass('btn-danger').addClass('btn-success').empty().append('Present')
+            else if(button.html() === "Present")
+                button.removeClass('btn-success').addClass('btn-primary').empty().append('Permission')
+            else if(button.html() === "Permission")
+                button.removeClass('btn-primary').addClass('btn-danger').empty().append('Absent')
+    }
+</script>

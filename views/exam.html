@@ -1,0 +1,110 @@
+<div id="exam">
+    <div class="bgc-white bd bdrs-3 p-20 mB-20" id="viewable" hidden>
+        <div class="row">
+            <div class="col-8">
+                <h4 class="c-grey-900 mB-20">Exams</h4>
+            </div>
+        </div>
+        <table id="modulesTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+            <thead>
+            <tr id="headers">
+                <th>
+                    Module
+                </th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+  if(JSON.parse(localStorage.getItem('token')).dept_id !== 2){
+    $('#exam').empty().append(`<div style="display: flex; justify-content: center; align-items: center;align-content: center; height: 80vh">
+                                <h1> Coming Soon </h1>
+                               </div>`)
+  }
+</script>
+<script>
+    $(document).ready(()=> {
+        $("#loading").attr('hidden', "hidden")
+        $("#viewable").removeAttr('hidden')
+    })
+    var table = $('#modulesTable').DataTable({
+        autoSize: true,
+        rowId: "module_id",
+        "order": [[ 0, "asc" ]],
+        columnDefs: [
+            {
+                targets: 0,
+                data: "module_name",
+                class: "fw-bold",
+                width: "98%",
+                render: function (data) {
+                    return ucwords(data)
+                }
+            },
+            {
+                targets: 1,
+                data: null,
+                class: "fw-bold",
+                width: "2%",
+                orderable: false,
+                render: function (data) {
+                    return `<button class="btn border-0 bg-transparent" title="questions"><i class="fa fa-question-circle-o text-primary fs-6"></i></button>`
+                }
+            }
+        ]
+    })
+
+    var fetchModules = {
+        table: "module",
+        fields: ["module_id","module_name"],
+        where: [{
+            dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+            acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`
+        }]
+    }
+
+    get(fetchModules,(res)=>{
+        table.rows.add(res).draw(false)
+    })
+
+    table.MakeCellsEditable({
+        "columns": [0],
+        "inputCss":'form-control-sm',
+        "onUpdate": function (updatedCell,updatedRow,oldValue){
+            var fields = {}
+            fields[table.columns(updatedCell.index().column).dataSrc()[0]] = updatedCell.data()
+            var data = {
+                table: "module",
+                fields: fields,
+                where: [{
+                    "module_id": updatedRow.id()
+                }]
+            }
+
+            put(data)
+        },
+        "inputTypes": [
+            {
+                "column":2,
+                "type": "list",
+                "options": [{
+                    value: "Enrolled",
+                    display: "Enrolled"
+                },{
+                    value: "Dropped Out",
+                    display: "Dropped Out"
+                },{
+                    value: "Dismissed",
+                    display: "Dismissed"
+                }],
+            }
+        ]
+    })
+
+
+</script>

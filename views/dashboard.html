@@ -1,0 +1,417 @@
+<div class="row gap-20">
+  <!-- #Enrolled ==================== -->
+  <div class="col-md-3">
+    <div class="layers bd bgc-white p-20">
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <h6>Enrolled Students</h6>
+            </div>
+          </div>
+          <div class="peer">
+            <h2 id="enrolled">0</h2>
+          </div>
+        </div>
+      </div>
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+                <i class="fa fa-users c-orange-500 mT-nv-20" style="font-size: 32pt"></i>
+            </div>
+          </div>
+          <div class="peer">
+            Since last year <span class="d-ib lh-0 va-m fw-600 bdrs-10em pX-15 pY-15" id="enrolled_perc">+10%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- #Total Page Views ==================== -->
+  <div class="col-md-3">
+    <div class="layers bd bgc-white p-20">
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <h6>Males</h6>
+            </div>
+          </div>
+          <div class="peer">
+            <h2 id="males">0</h2>
+          </div>
+        </div>
+      </div>
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <i class="fa fa-male c-blue-500 mT-nv-20" style="font-size: 32pt"></i>
+            </div>
+          </div>
+          <div class="peer">
+            Since last year <span class="d-ib lh-0 va-m fw-600 bdrs-10em pX-15 pY-15" id="males_perc">-10%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- #Unique Visitors ==================== -->
+  <div class="col-md-3">
+    <div class="layers bd bgc-white p-20">
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <h6>Females</h6>
+            </div>
+          </div>
+          <div class="peer">
+            <h2 id="females">0</h2>
+          </div>
+        </div>
+      </div>
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <i class="fa fa-female c-pink-500 mT-nv-20" style="font-size: 32pt"></i>
+            </div>
+          </div>
+          <div class="peer">
+            Since last year <span class="d-ib lh-0 va-m fw-600 bdrs-10em pX-15 pY-15" id="females_perc">~10%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- #Bounce Rate ==================== -->
+  <div class="col-md-3">
+    <div class="layers bd bgc-white p-20">
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <h6>Attendance</h6>
+            </div>
+          </div>
+          <div class="peer">
+            <h2 id="attendance_stat">0</h2>
+          </div>
+        </div>
+      </div>
+      <div class="layer w-100">
+        <div class="peers ai-sb fxw-nw">
+          <div class="peer peer-greed">
+            <div>
+              <i class="fa fa-percent c-green-500 mT-nv-20" style="font-size: 32pt"></i>
+            </div>
+          </div>
+          <div class="peer">
+            Since yesterday <span class="d-ib lh-0 va-m fw-600 bdrs-10em pX-15 pY-15" id="attendance_perc">+10%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mT-10">
+  <div class="bd bgc-white">
+    <div class="peers fxw-nw@lg+ ai-s">
+      <div class="peer peer-greed w-70p@lg+ w-100@lg- p-20">
+        <div class="layers">
+          <div class="layer w-100 mB-10">
+            <h6 class="lh-1">Class Performance</h6>
+          </div>
+          <div class="layer w-100">
+            <div class="mT-30">
+              <!-- Chart -->
+              <div class="apexcharts-line" id="chart">
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="peer bdL p-20 w-30p@lg+ w-100p@lg-">
+        <div class="layers">
+          <div class="layer w-100">
+            <h6 class="lh-1">Rank</h6>
+            <h4 class="lh-0 mT-10">Top 10</h4>
+            <table class="table mT-20">
+              <tr class="bg-white border-bottom border-white">
+                <th class="w-75">
+                  Name
+                </th>
+                <th class="w-25">
+                  Avg
+                </th>
+                <th class="w-25">
+                  Rank
+                </th>
+              </tr>
+              <tbody id="rankTable">
+              <tr><td class="text-center" colspan="3">Nothing to show here</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  var fetch = {
+    table: "trainee_info",
+    fields: ["count(*) as total","count(case when gender='M' then 1 end) as males","count(case when gender='F' then 1 end) as females"],
+    where: [{
+      'trainee_info.dept_id': `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+      'trainee_info.acadamic_year': `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+      'trainee_info.status': "'Enrolled'"
+    }]
+  }
+  if(JSON.parse(localStorage.getItem('token')).dept_id === 1){
+    fetch.where[0]["trainee_info.batch"] = JSON.parse(localStorage.getItem('token')).batch
+  }
+
+  var tmp = JSON.parse(localStorage.getItem('token')).academic_year.split('/')
+  var last_acadamic_year = (Number(tmp[0]) - 1) + "/" + (Number(tmp[1]) - 1)
+  var fetch_last_year = {
+    table: "trainee_info",
+    fields: ["count(*) as total","count(case when gender='M' then 1 end) as males","count(case when gender='F' then 1 end) as females"],
+    where: [{
+      'trainee_info.dept_id': `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+      'trainee_info.acadamic_year': `'${last_acadamic_year}'`,
+      'trainee_info.status': "'Enrolled'"
+    }]
+  }
+  if(JSON.parse(localStorage.getItem('token')).dept_id === 1){
+    fetch_last_year.where[0]["trainee_info.batch"] = JSON.parse(localStorage.getItem('token')).batch
+  }
+  get(fetch,(res)=>{
+    var males = Number(res[0].males)
+    var females = Number(res[0].females)
+    var total = Number(res[0].total)
+
+    $("#enrolled").empty().html(total)
+    $("#males").empty().html(males)
+    $("#females").empty().html(females)
+
+    get(fetch_last_year,(response)=>{
+      var last_males = Number(response[0].males)
+      var last_females = Number(response[0].females)
+      var last_enrolled = Number(response[0].total)
+
+      if(last_enrolled !== 0 ){
+        var enrolled_percent = Number(((total - last_enrolled)/last_enrolled)*100).toFixed(1)
+        if(enrolled_percent > 0)
+          $("#enrolled_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+enrolled_percent+"%")
+        else if(enrolled_percent === 0)
+          $("#enrolled_perc").addClass("bgc-purple-50").addClass('c-purple-500').empty().html("~"+enrolled_percent+"%")
+        else
+          $("#enrolled_perc").addClass("bgc-red-50").addClass('c-red-500').empty().html(enrolled_percent+"%")
+      }
+      else{
+        enrolled_percent = 100
+        $("#enrolled_perc").empty().html("+"+enrolled_percent+"%")
+        $("#enrolled_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+enrolled_percent+"%")
+      }
+      if(last_males !== 0){
+        var males_percent = Number(((males - last_males)/last_males)*100).toFixed(1)
+        if(males_percent > 0)
+          $("#males_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+males_percent+"%")
+        else if(males_percent === 0)
+          $("#males_perc").addClass("bgc-purple-50").addClass('c-purple-500').empty().html("~"+males_percent+"%")
+        else
+          $("#males_perc").addClass("bgc-red-50").addClass('c-red-500').empty().html(males_percent+"%")
+      }
+      else{
+        males_percent = 100
+        $("#males_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+males_percent+"%")
+      }
+      if(last_females !== 0){
+        var females_percent = Number(((females - last_females)/last_females)*100).toFixed(1)
+        if(females_percent > 0)
+          $("#females_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+females_percent+"%")
+        else if(females_percent === 0)
+          $("#females_perc").addClass("bgc-purple-50").addClass('c-purple-500').empty().html("~"+females_percent+"%")
+        else
+          $("#females_perc").addClass("bgc-red-50").addClass('c-red-500').empty().html(females_percent+"%")
+      }
+      else{
+        females_percent = 100
+        $("#females_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+females_percent+"%")
+      }
+
+    })
+  })
+
+  var fetchAttendance = {
+    table: "attendance left join trainee_info on trainee_info.id = attendance.student_id",
+    fields: ["count(*) as total","count(case when attendance.status='Absent' then 1 end) as absent"],
+    where:[{
+      "trainee_info.dept_id": `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+      "trainee_info.acadamic_year": `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+      "attendance.date": "'" + moment().format("YYYY-MM-DD") + "'"
+    }]
+  }
+  get(fetchAttendance,(res)=>{
+    var total = Number(res[0].total)
+    var present = total - Number(res[0].absent)
+    var attendance_perc = total === 0 ? 0 : Number((present/total)*100).toFixed(1)
+
+    $("#attendance_stat").empty().html(attendance_perc + "%")
+
+    fetchAttendance.where[0]['attendance.date'] = "'" + moment().day(moment().day() - 1).format("YYYY-MM-DD") + "'"
+    get(fetchAttendance,(res)=>{
+      var yest_total = Number(res[0].total)
+      var yest_present = total - Number(res[0].absent)
+
+      console.log(yest_present,yest_total)
+
+      if(yest_present !== 0){
+        var attendance_percent = Number(((present - yest_present)/yest_present)*100).toFixed(1)
+        if(attendance_percent > 0)
+          $("#attendance_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+attendance_percent+"%")
+        else if(attendance_percent === 0)
+          $("#attendance_perc").addClass("bgc-purple-50").addClass('c-purple-500').empty().html("~"+attendance_percent+"%")
+        else
+          $("#attendance_perc").addClass("bgc-red-50").addClass('c-red-500').empty().html(attendance_percent+"%")
+      }
+      else{
+        attendance_percent = 100
+        $("#attendance_perc").addClass("bgc-green-50").addClass('c-green-500').empty().html("+"+attendance_percent+"%")
+      }
+    })
+  })
+</script>
+<script defer>
+  var rankDataFetch = {
+    table: "trainee_info left join (select student_id,AVG(mark) as average from marks group by student_id) as mark on mark.student_id=trainee_info.student_id ",
+    fields: ["trainee_info.first_name","trainee_info.middle_name","trainee_info.last_name","mark.average","rank() over (order by mark.average desc) as rank"],
+    where: [{
+      dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+      acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+      status: "'Enrolled'"
+    }],
+    limit: 10
+  }
+  if(JSON.parse(localStorage.getItem('token')).dept_id === 1)
+    rankDataFetch.where[0]["batch"] = JSON.parse(localStorage.getItem('token')).batch
+
+  get(rankDataFetch,(res)=>{
+    $("#rankTable").empty()
+    for(var i in res){
+      $("#rankTable").append(`
+      <tr>
+        <td>${(res[i].rank >=1 && res[i].rank <= 3) ? "<i class='fas fa-award c-yellow-700'></i> " + res[i].first_name + " " + res[i].middle_name + " " + res[i].last_name : res[i].first_name + " " + res[i].middle_name + " " + res[i].last_name}</td>
+        <td>${Number(res[i].average).toFixed(1)}</td>
+        <td>${res[i].rank}</td>
+      </tr>
+      `)
+    }
+  })
+</script>
+<script defer>
+  var fetchChartData = {
+    table: "module left join marks on marks.module_name = module.module_name",
+    fields: ["module.module_id","module.module_name","ifnull(round(avg(marks.mark),2),0) as average"],
+    where: [{
+      dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+      acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`
+    }],
+    group_by: ["module.module_name"],
+    order_by: {
+      columns: ["module.module_id"],
+      order: "asc"
+    }
+  }
+
+  get(fetchChartData,(res)=>{
+    var catagories = []
+    var data = []
+
+    for(var i in res){
+      catagories.push(res[i].module_name)
+      data.push(res[i].average)
+    }
+    var options = {
+      series: [{
+        name: "Average Marks",
+        data: data
+      }
+      ],
+      chart: {
+        height: 480,
+        type: 'line',
+        toolbar:{
+          tools: {
+            reset: false,
+            download: false
+          }
+        },
+        zoom: {
+          enabled: true
+        },
+      },
+      dataLabels: {
+        enabled: true
+      },
+      stroke: {
+        width: [2, 2, 2],
+        curve: 'smooth',
+
+      },
+      legend: {
+        tooltipHoverFormatter: function(val, opts) {
+          return val + ' - <strong>' + opts.w.globals.series[opts.seriesIndex][opts.dataPointIndex] + '</strong>'
+        }
+      },
+      markers: {
+        size: 0,
+        hover: {
+          sizeOffset: 6
+        }
+      },
+      xaxis: {
+        title: "Modules",
+        categories: catagories
+      },
+      tooltip: {
+        y: [
+          {
+            title: {
+              formatter: function (val) {
+                return val;
+              }
+            }
+          },
+          {
+            title: {
+              formatter: function (val) {
+                return val ;
+              }
+            }
+          },
+          {
+            title: {
+              formatter: function (val) {
+                return val;
+              }
+            }
+          }
+        ]
+      },
+      grid: {
+        borderColor: '#f1f1f1',
+      }
+    };
+    var chart = new ApexCharts(document.querySelector("#chart"), options);
+    chart.render();
+  })
+</script>

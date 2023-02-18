@@ -1,0 +1,116 @@
+<div class="mT-10">
+    <div class="bd bgc-white">
+        <div class="peers fxw-nw@lg+ ai-s">
+            <div class="peer peer-greed w-70p@lg+ w-100@lg- p-20">
+                <div class="layers">
+                    <div class="layer w-100 mB-10">
+                        <h6 class="lh-1">Companies</h6>
+                    </div>
+                    <div class="layer w-100">
+                        <table id="companyDataTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="peer bdL p-20 w-30p@lg+ w-100p@lg-">
+                <div class="layers">
+                    <div class="layer w-100">
+                        <h6 class="lh-1">Add Company</h6>
+                        <div class="mT-30">
+                            <form id="companyForm" onsubmit="saveCompany(event)">
+                                <div class="form-group">
+                                    <label for="companyName">Company Name</label>
+                                    <input type="text" class="form-control" id="companyName" name="companyName" placeholder="Company Name">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var table = $('#companyDataTable').DataTable({
+        rowId: "company_id",
+        columnDefs: [
+            {
+                targets: 0,
+                data: "company_name",
+                render: function (data){
+                    return ucwords(data)
+                }
+            }]
+    })
+
+    var fetchCompanies = {
+        table: "companies",
+        fields: ["company_id","company_name"]
+    }
+
+    get(fetchCompanies,(res)=>{
+        table.rows.add(res).draw(false)
+    })
+
+    table.MakeCellsEditable({
+        "columns": [0],
+        "inputCss":'form-control-sm',
+        "onUpdate": function (updatedCell,updatedRow,oldValue){
+            var fields = {}
+            fields["company_name"] = updatedCell.data()
+            var data = {
+                table: "companies",
+                fields: fields,
+                where: [{
+                    company_id: updatedRow.id()
+                }]
+            }
+            put(data)
+        }
+    })
+
+    $('#companyForm').validate({
+        rules: {
+            companyName: {
+                required: true,
+                normalizer: function(value) {
+                    return $.trim(value);
+                }
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid",
+    })
+
+    function saveCompany(event){
+        event.preventDefault()
+
+        if($('#companyForm').valid()){
+            var company = {
+                table: "companies",
+                fields: ["company_name"],
+                rows: [{
+                    company_name: "'" + $('#companyName').val().trim() + "'"
+                }]
+            }
+            set(company,(res)=>{
+                if(res.success === "true"){
+                    showNotification("top","center","success","Company added successfully.")
+                    $('#mainContent').load("views/admin/addCompanies.html")
+                }
+                else{
+                    showNotification("top","center","danger",ress.message)
+                }
+            })
+        }
+    }
+</script>

@@ -1,0 +1,277 @@
+<div id="importLoader">
+    <div class="spinner"></div>
+</div>
+<div class="bgc-white bd bdrs-3 p-20 mB-20">
+    <div class="row">
+        <div class="col text-left">
+            <h4 class="c-grey-900 mB-20">Import</h4>
+        </div>
+        <div class="col text-right">
+            <a href="./templates/template.csv" download class="btn cur-p btn-primary text-white">Download Template</a>
+        </div>
+    </div>
+    <div id="File_Content">
+        <div class="row mt-5">
+            <div class="col">
+                <h5 class="border-bottom border-secondary">About CSV File Import</h5>
+            </div>
+        </div>
+        <div class="row mt-3 mb-5">
+            <div class="col">
+                <ul>
+                    <li>Import an CSV file with Full Name,Corporation,Gender,Date of Birth,Ethnicity,Edu. Status,Phone No.,National ID,Department,Level,Batch and Experience.</li>
+                    <li>The first row from the CSV file will be marked as the name of each column.</li>
+                    <li>Having a hard time importing an CSV file? Download the template and fill it</li>
+                </ul>
+            </div>
+        </div>
+        <div class="pt-3 pb-3" style="border-radius: 10px;border-style: dashed;display: flex;align-items: center;justify-content: center" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="flex-column align-items-center justify-content-center">
+                <i class="text-primary ml-5 fa fa-cloud-upload" style="font-size: 72pt"></i>
+                <p>Please select or drag a csv file here</p>
+            </div>
+        </div>
+        <button class="form-control mt-3 bg-secondary" onclick="document.querySelector('#browse').click()">
+            <input type="file" id="browse" accept=".csv" onchange="processFile(this.files)" hidden>
+            <p class="text-center text-light">Browse</p>
+        </button>
+    </div>
+</div>
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-dark border-light">
+            <div class="modal-header"><h5 class="modal-title text-light" id="exampleModalLabel">
+                Importing Data</h5>
+                <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body bg-dark" style="display: flex;align-items: center;justify-content: center">
+                <div class="loading"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="./assets/js/plugins/papaparse/papaparse.min.js"></script>
+<script>
+    var table
+    $('#importLoader').hide()
+
+    function showLoading(state){
+        $('#exampleModal').modal(state)
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        var data = ev.dataTransfer.files;
+        processFile(data)
+    }
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+
+    function processFile(fileList){
+        new Promise((resolve,reject) => {
+            $('#File_Content').empty().append(`
+            <table id="fileDataTable" class="row-border table table-striped hover" cellspacing="0" width="100%">
+                    <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Corporation</th>
+                        <th>Gender</th>
+                        <th>Date of Birth</th>
+                        <th>Ethnicity</th>
+                        <th>Edu. Status</th>
+                        <th>Phone No.</th>
+                        <th>National ID</th>
+                        <th>Department</th>
+                        <th>Level</th>
+                        <th>Batch</th>
+                        <th>Exp</th>
+                        <th>SID</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tableBody ">
+                    </tbody>
+            </table>
+            <div class=" mt-3 mb-0 text-right">
+                <button id="save" onclick="save()" class="btn btn-primary">Save</button>
+                <button id="cancel" onclick="cancel()" class="btn btn-secondary">Cancel</button>
+            </div>
+    `)
+            resolve('done')
+        }).then(value => {
+            if(value === 'done'){
+                table = $('#fileDataTable').DataTable({
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            data: "Full Name",
+                            render: function (data){
+                                return ucwords(data)
+                            }
+                        },
+                        {
+                            targets: 1,
+                            data: "Corporation",
+                            class: "text-center"
+                        },
+                        {
+                            targets: 2,
+                            data: "Gender",
+                            render: function (data){
+                                return data.toUpperCase()
+                            },
+                            class: "text-center"
+                        },
+                        {
+                            targets: 3,
+                            data: "Date of Birth",
+                            render: function (data){
+                                if(data == '')
+                                    return data
+                                else
+                                    return moment(data).format('DD-MM-YYYY')
+                            },
+                            class: "text-right"
+                        },
+                        {
+                            targets: 4,
+                            data: "Ethnicity",
+                            class: "text-right"
+                        },
+                        {
+                            targets: 5,
+                            data: "Edu Status",
+                            class: "text-right",
+                        },
+                        {
+                            targets: 6,
+                            data: "Phone No",
+                            class: "text-right"
+                        },
+                        {
+                            targets: 7,
+                            data: "National ID",
+                            class: "text-right"
+                        },
+                        {
+                            targets: 8,
+                            data: "Department",
+                            class: "text-right"
+                        },
+                        {
+                            targets: 9,
+                            data: "Level"
+                        },
+                        {
+                            targets: 10,
+                            data: "Batch"
+                        },
+                        {
+                            targets: 11,
+                            data: "Experience"
+                        },
+                        {
+                            targets: 12,
+                            data: "SID",
+                            width: "10%"
+                        }
+
+                    ]
+                })
+                Papa.parse(fileList[0], {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: async function (results,parser){
+                        console.log(results.data)
+                        var student_id = {
+                            table: "trainee_info left join departments on departments.dept_id = trainee_info.dept_id",
+                            fields: ["count(*) as count,departments.shortname"],
+                            where: [{
+                                "departments.dept_name": "'" + results.data[i].Department + "'",
+                                "trainee_info.acadamic_year": `'${JSON.parse(localStorage.getItem('token')).academic_year}'`
+                            }]
+                        }
+                        var current
+                        var shortname
+                        await new Promise(resolve => {
+                            get(student_id, (res) => {
+                                current = Number(res[0].count)
+                                shortname = res[0].shortname
+                                resolve('done')
+                            })
+                        }).then(value =>{
+                            if(value === 'done'){
+                                for (var i in results.data){
+                                    var next = current + 1 <= 9 ? "0" + (current + 1) : current + 1
+                                    var acc = `${JSON.parse(localStorage.getItem('token')).academic_year}`.split('/')
+                                    var accCode = acc[0].substr(acc[0].length - 2, 2) + acc[1].substr(acc[1].length - 2, 2)
+
+                                    results.data[i]["SID"] = shortname + "-" + accCode + "-" + "B" + results.data[i].Batch + "L1" + "-" + next
+                                    table.row.add(results.data[i]).draw(false)
+
+                                    results.data[i].Department === "Computer Application" ? student_id.where[0]["batch"] = results.data[i].Batch : ''
+                                    current++
+                                }
+                            }
+                        })
+
+                        // table.rows.add(results.data).draw(false)
+                    }
+                })
+            }
+        })
+    }
+
+    function cancel(){
+        $('#save').prop('disabled',true)
+        $('#cancel').empty().append("Canceling").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop("disabled",true)
+        $('#mainContent').load('views/admin/import.html')
+    }
+
+    function save(){
+        $('#save').empty().append("Saving").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+        $('#cancel').prop("disabled",true)
+        var data = {
+            table: "tmp_data",
+            fields: ["full_name","corporation","gender","birthdate","ethnicity","edu_status","phone_no","national_id","department","level","batch","experience","acadamic_year","SID"]
+        }
+
+        var rows = []
+        table.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var data = this.data();
+            console.log(data)
+            var tmp = {
+                full_name: data["Full Name"].split(' ').length < 3 ? "'" + data["Full Name"] + ' ' + "'" : "'" + data["Full Name"] +  "'",
+                corporation: "'" + data.Corporation + "'" ,
+                gender: "'" + data.Gender + "'",
+                birthdate: "'" + moment(data["Date of Birth"]).format("YYYY-MM-DD") + "'",
+                ethnicity: "'" + data.Ethnicity + "'",
+                edu_status: "'" + data["Edu Status"] + "'",
+                phone_no: data["Phone No"] !== ''? data["Phone No"] : '',
+                national_id: "'" + data["National ID"] + "'",
+                department: "'" + data.Department + "'",
+                level: data.Level,
+                batch: data.Batch,
+                experience: data.Experience,
+                acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+                SID: "'" + data.SID + "'"
+            }
+            rows.push(Object.values(tmp))
+        } )
+
+        data["rows"] = rows
+        $.post('./api/import.php',data,"json").done((value)=>{
+            if(JSON.parse(value).success === "success"){
+                showNotification("top","center","success","Data imported successfully.")
+                $('#mainContent').load('views/admin/import.html')
+            }
+            else{
+                showNotification("top","center","danger","Failed to import data.Try again.")
+            }
+        })
+
+    }
+
+</script>

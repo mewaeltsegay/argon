@@ -1,0 +1,242 @@
+<div id="loading">
+    <div class="spinner"></div>
+</div>
+<div class="bgc-white bd bdrs-3 p-20 mB-20" id="viewable" hidden>
+    <div class="row">
+        <div class="col-8">
+            <h4 class="c-grey-900 mB-20">Marks</h4>
+        </div>
+        <div class="col-4 mT-nv-20" style="display: grid;place-items: center end">
+            <button class="btn btn-primary text-white" data-toggle="modal" data-target="#modulesModal">Add Module</button>
+        </div>
+    </div>
+    <table id="marksTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+        <tr id="headers">
+            <th>
+                Full Name
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+<div class="modal" id="modulesModal" tabindex="-1" role="dialog" aria-labelledby="modulesModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title" id="modulesModalLabel">
+                Add Module</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="moduleForm" onsubmit="addModule(event)">
+                    <div class="form-group col-md-12">
+                        <label for="moduleName">Module</label>
+                        <input type="text" class="form-control" id="moduleName" name="moduleName" placeholder="Module Name" required></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="close">
+                    Close
+                </button>
+                <button type="submit" class="btn btn-primary" form="moduleForm">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var table
+    $(document).ready(()=>{
+        $("#loading").attr('hidden',"hidden")
+        $("#viewable").removeAttr('hidden')
+
+        var fetchModules = {
+            table: "module",
+            fields: ["distinct module_name","module_id"],
+            where: [{
+                dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+                acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+            }],
+            order_by: {
+                columns: ["module_id"],
+                order: "asc"
+            }
+        }
+
+        get(fetchModules,setTableHeaders)
+
+        var options = {
+            rowId: "student_id",
+            "order": [[ 0, "asc" ]],
+            columnDefs: [{
+                targets: 0,
+                class: "fw-bold",
+                width: "50%",
+                data: null,
+                render: function (data,type,row,meta){
+                    return ucwords(row.first_name + " " + row.middle_name + " " + row.last_name)
+                }
+            }]
+        }
+
+        function setTableHeaders(response){
+            new Promise(resolve => {
+                for(var i in response){
+                    $('#headers').append(`
+                    <th>${ucwords(response[i].module_name)}</th>
+                    `)
+                    var tmp = {
+                        targets: Number(i) + 1,
+                        width: "8%",
+                        class: "fw-bold",
+                        data: response[i].module_name.toString(),
+                        render: (data) => {
+                            if(data === undefined) {
+                                return 0
+                            } else {
+                                return data
+                            }
+                        }
+                    }
+                    options.columnDefs.push(tmp)
+                    resolve("done")
+                }
+            }).then(value => {
+                table = $('#marksTable').DataTable(options)
+                var fetch = {
+                    table: "trainee_info left join marks on marks.student_id = trainee_info.student_id",
+                    fields: ["trainee_info.first_name","trainee_info.middle_name","trainee_info.last_name","trainee_info.student_id","group_concat(marks.module_name,':',marks.mark) as marks"],
+                    where: [{
+                        dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+                        acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+                        status: "'Enrolled'"
+                    }],
+                    group_by: ["trainee_info.student_id"],
+                    order_by: {
+                        columns: ["first_name","middle_name","last_name"],
+                        order: "asc"
+                    }
+                }
+                if(JSON.parse(localStorage.getItem('token')).dept_id === 1)
+                    fetch.where[0]["batch"] = JSON.parse(localStorage.getItem('token')).batch
+                get(fetch,convertMarksToJSON)
+            })
+        }
+        function convertMarksToJSON(response){
+            var newJSON = []
+            for(var i in response){
+                var tmp = {
+                    student_id: response[i].student_id,
+                    first_name: response[i].first_name,
+                    middle_name: response[i].middle_name,
+                    last_name: response[i].last_name
+                }
+                var markArray =  response[i].marks === null ? [] : response[i].marks.split(',')
+                for(i in markArray){
+                    var splitted = markArray[i].split(':')
+                    tmp[splitted[0]] = splitted[1]
+                }
+                newJSON.push(tmp)
+            }
+            table.rows.add(newJSON).draw(false)
+        }
+    })
+
+    function addModule(event){
+        event.preventDefault()
+
+        if($("#moduleForm").valid()){
+            var data = {
+                table: "module",
+                fields: ["module_name","dept_id","acadamic_year"],
+                rows: [{
+                    module_name: "'" + ucwords($("#moduleName").val()) + "'",
+                    dept_id: `'${JSON.parse(localStorage.getItem('token')).dept_id}'`,
+                    acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`
+                }]
+            }
+            set(data,handleSet)
+        }
+    }
+
+    function handleSet(response){
+        console.log(response)
+        if(response.success === "true") {
+            $("#close").click()
+            $("#mainContent").load('views/marks.html')
+        }
+        else {
+            showNotification("top", "center", "danger", "Something went wrong. Try again.")
+        }
+    }
+
+    $("#moduleForm").validate({
+        rules: {
+            moduleName: {
+                required: true,
+            }
+        }
+    })
+
+    $('#marksTable tbody').on( 'click', 'td:not(:first-child)', function () {
+        var current = Number($(this).html())
+        $(this).empty().append(`<input type="text" class="form-control-sm w-100 m-0" placeholder="enter mark" required>`)
+        var td = $(this)
+        $(this).children("input").focus().focusout(()=>{
+            var newValue = Number($(this).children("input").val())
+            if(newValue === "")
+                td.empty().html(current)
+            else{
+                var idx = table.cell(this).index().column
+                var title = table.columns(idx).header()
+                if(current !== 0) {
+                    if(newValue !== 0) {
+                        var putData = {
+                            table: "marks",
+                            fields: {
+                                mark: newValue
+                            },
+                            where: [{
+                                module_name: "'" + $(title).html() + "'",
+                                student_id: `'${$(this).parents("tr").attr("id")}'`
+                            }]
+                        }
+                        put(putData, (response) => {
+                            if (response === "true") {
+                                td.empty().html(newValue)
+                            } else
+                                td.empty().html(current)
+                        })
+                    }
+                    else{
+                        td.empty().html(current)
+                    }
+                }
+                else{
+                    var data = {
+                        table: "marks",
+                        fields: ["module_name", "student_id", "mark"],
+                        rows: [{
+                            module_name: "'" + $(title).html() + "'",
+                            student_id: `'${$(this).parents("tr").attr("id")}'`,
+                            mark: `${newValue}`
+                        }]
+
+                    }
+
+                    set(data,(response)=>{
+                        if(response.success === "true") {
+                            td.empty().html(newValue)
+                        }
+                        else
+                            td.empty().html(current)
+                    })
+                }
+            }
+
+        })
+    })
+</script>

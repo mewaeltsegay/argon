@@ -1,0 +1,232 @@
+<div id="loading">
+    <div class="spinner"></div>
+</div>
+<div class="row gap-20 masonry pos-r" style="position: relative; height: 1096.8px;">
+    <div class="masonry-sizer col-md-12"></div>
+    <div class="masonry-item col-md-12" style="position: absolute; left: 0%; top: 0px;">
+        <div class="bgc-white p-20 bd"><h6 class="c-grey-900">Academic Year</h6>
+            <div class="mT-30">
+                <form id="accForm" onsubmit="accSave(event)">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="accStart">Current Starting Date: </label>
+                                <input type="text" class="form-control bdc-grey-200 start-date" id="accStart" name="accStart" placeholder="New Starting Date" data-provide="datepicker">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="accEnd">Current End Date: </label>
+                                <input type="text" class="form-control bdc-grey-200 start-date" id="accEnd" name="accEnd" placeholder="New End Date" data-provide="datepicker">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="accSaveButton">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="masonry-item col-md-6" style="position: absolute; left: 0%; top: 214.8px;">
+        <div class="bgc-white p-20 bd"><h6 class="c-grey-900">Computer Application Batch 1</h6>
+            <div class="mT-30">
+                <form id="b1Form" onsubmit="b1Save(event)">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="b1Start"> Current Starting Date: </label>
+                                <input type="text" class="form-control bdc-grey-200 start-date" id="b1Start" name="b1Start" placeholder="Starting Date" data-provide="datepicker">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="b1End">Current End Date: </label>
+                                <input type="text" class="form-control bdc-grey-200 start-date" id="b1End" name="b1End" placeholder="End Date" data-provide="datepicker">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="b1SaveButton">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="masonry-item col-md-6" style="position: absolute; right: 0%; top: 214.8px;">
+        <div class="bgc-white p-20 bd"><h6 class="c-grey-900">Computer Application Batch 2</h6>
+            <div class="mT-30">
+                <form id="b2Form" onsubmit="b2Save(event)">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="b2Start">Current Starting Date: </label>
+                                <input type="text" class="form-control bdc-grey-200 start-date" id="b2Start" name="b2Start" placeholder="Starting Date" data-provide="datepicker">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="b2End">Current End Date: </label>
+                                <input type="text" class="form-control bdc-grey-200 start-date" id="b2End" name="b2End" placeholder="End Date" data-provide="datepicker">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="b2SaveButton">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(()=>{
+        var fetchAccYear = {
+            table: "settings",
+            fields: ["*"],
+        }
+        get(fetchAccYear,(res)=>{
+            $("label[for='accStart']").append(`${moment(res[0].acadamic_start).format("DD/MM/YYYY")}`)
+            $("label[for='accEnd']").append(`${moment(res[0].acadamic_end).format("DD/MM/YYYY")}`)
+            $("label[for='b1Start']").append(`${moment(res[1].acadamic_start).format("DD/MM/YYYY")}`)
+            $("label[for='b1End']").append(`${moment(res[1].acadamic_end).format("DD/MM/YYYY")}`)
+            $("label[for='b2Start']").append(`${moment(res[2].acadamic_start).format("DD/MM/YYYY")}`)
+            $("label[for='b2End']").append(`${moment(res[2].acadamic_end).format("DD/MM/YYYY")}`)
+        })
+        $("#loading").attr("hidden","hidden")
+        $("#viewable").removeAttr("hidden")
+    })
+</script>
+<script>
+    $('#accForm').validate({
+        rules: {
+            accStart: {
+                required: true
+            },
+            accEnd: {
+                required: true
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid"
+    })
+
+    $('#b1Form').validate({
+        rules: {
+            b1Start: {
+                required: true
+            },
+            b1End: {
+                required: true
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid"
+    })
+
+    $('#b2Form').validate({
+        rules: {
+            b2Start: {
+                required: true
+            },
+            b2End: {
+                required: true
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid"
+    })
+
+    function accSave(event){
+        event.preventDefault()
+
+        if($('#accForm').valid()){
+            $("#accSaveButton").empty().append("Saving").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+            var data = {
+                table: "settings",
+                fields: {
+                    acadamic_start: moment($('#accStart').val()).format('YYYY-MM-DD'),
+                    acadamic_end: moment($('#accEnd').val()).format('YYYY-MM-DD')
+                },
+                where: [{
+                    seid: "1"
+                }]
+            }
+
+            put(data,(res)=>{
+                if(res === "true"){
+                    $("#accSaveButton").empty().append("Save").prop('disabled',false)
+                    $('#accStart').removeClass('is-valid')
+                    $('#accEnd').removeClass('is-valid')
+                    $("label[for='accStart']").empty().append(`Current Starting Date: ${moment($('#accStart').val()).format("DD/MM/YYYY")}`)
+                    $("label[for='accEnd']").empty().append(`Current End Date: ${moment($('#accEnd').val()).format("DD/MM/YYYY")}`)
+                    showNotification('top','center','success','Saved successfully.')
+                    document.querySelector('#accForm').reset()
+                }
+                else{
+                    showNotification('top','center','danger','Something went wrong. Try Again.')
+                }
+            })
+        }
+    }
+
+    function b1Save(event){
+        event.preventDefault()
+
+        if($('#b1Form').valid()){
+            $("#b1SaveButton").empty().append("Saving").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+            var data = {
+                table: "settings",
+                fields: {
+                    acadamic_start: moment($('#b1Start').val()).format('YYYY-MM-DD'),
+                    acadamic_end: moment($('#b1End').val()).format('YYYY-MM-DD')
+                },
+                where: [{
+                    seid: "2"
+                }]
+            }
+
+            put(data,(res)=>{
+                if(res === "true"){
+                    $("#b1SaveButton").empty().append("Save").prop('disabled',false)
+                    $('#b1Start').removeClass('is-valid')
+                    $('#b1End').removeClass('is-valid')
+                    $("label[for='b1Start']").empty().append(`Current Starting Date: ${moment($('#b1Start').val()).format("DD/MM/YYYY")}`)
+                    $("label[for='b1End']").empty().append(`Current End Date: ${moment($('#b1End').val()).format("DD/MM/YYYY")}`)
+                    showNotification('top','center','success','Saved successfully.')
+                    document.querySelector('#b1Form').reset()
+                }
+                else{
+                    showNotification('top','center','danger','Something went wrong. Try Again.')
+                }
+            })
+        }
+    }
+
+    function b2Save(event){
+        event.preventDefault()
+
+        if($('#b2Form').valid()){
+            $("#b2SaveButton").empty().append("Saving").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+            var data = {
+                table: "settings",
+                fields: {
+                    acadamic_start: moment($('#b2Start').val()).format('YYYY-MM-DD'),
+                    acadamic_end: moment($('#b2End').val()).format('YYYY-MM-DD')
+                },
+                where: [{
+                    seid: "3"
+                }]
+            }
+
+            put(data,(res)=>{
+                if(res === "true"){
+                    $("#b2SaveButton").empty().append("Save").prop('disabled',false)
+                    $('#b2Start').removeClass('is-valid')
+                    $('#b2End').removeClass('is-valid')
+                    $("label[for='b2Start']").empty().append(`Current Starting Date: ${moment($('#b2Start').val()).format("DD/MM/YYYY")}`)
+                    $("label[for='b2End']").empty().append(`Current End Date: ${moment($('#b2End').val()).format("DD/MM/YYYY")}`)
+                    showNotification('top','center','success','Saved successfully.')
+                    document.querySelector('#b2Form').reset()
+                }
+                else{
+                    showNotification('top','center','danger','Something went wrong. Try Again.')
+                }
+            })
+        }
+    }
+</script>

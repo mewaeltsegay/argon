@@ -1,0 +1,436 @@
+<div id="loading">
+    <div class="spinner"></div>
+</div>
+<div class="bgc-white bd bdrs-3 p-20 mB-20" id="viewable" hidden>
+    <div class="row">
+        <div class="col-6">
+            <h4 class="c-grey-900 mB-20">Attendance</h4>
+        </div>
+        <div class="col mT-nv-20" style="display: grid;place-items: center end">
+            <div class="row">
+                <div class="col"><input type="text" class="form-control start-date" placeholder="From" data-provide="datepicker" id="from" onchange="process()"></div>
+                <div class="col"><input type="text" class="form-control end-date" placeholder="To" data-provide="datepicker" id="to" onchange="process()"></div>
+                <div class="col mL-nv-20 mR-nv-10">
+                    <div class="form-group">
+                        <select class="custom-select" name="department" id="department" onchange="enableBatch(this.value);process()">
+                            <option disabled="disabled">Choose Department</option>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="col" id="batchcontainer">
+                    <div class="form-group">
+                        <select class="custom-select" name="batch" id="batch" onchange="process()">
+                            <option disabled="disabled">Choose Batch</option>
+                            <option batch="1" selected="selected">Batch 1</option>
+                            <option batch="2">Batch 2</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col mL-nv-30">
+                    <div class="d-flex flex-row-reverse">
+                        <button class="btn btn-primary mB-20 mL-10" title="Print" onclick="handlePrinting()"><i class="fa fa-print"></i></button>
+                        <button class="btn btn-success mB-20" title="Export" id="export" onclick="handleExcel()"><i class="fa fa-file-excel"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table id="attendanceTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+        <tr id="dates">
+            <th>Full Name</th>
+
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+<script>
+    function waitForElement(querySelector, timeout=0){
+        const startTime = new Date().getTime();
+        return new Promise((resolve, reject)=>{
+            const timer = setInterval(()=>{
+                const now = new Date().getTime();
+                if(document.querySelector(querySelector)){
+                    clearInterval(timer);
+                    resolve();
+                }else if(timeout && now - startTime >= timeout){
+                    clearInterval(timer);
+                    reject();
+                }
+            }, 100);
+        });
+    }
+
+    var fetchDepartments = {
+        table: "departments",
+        fields: ["dept_id","dept_name","shortname"],
+        order_by: {
+            columns: ["dept_name"],
+            order: "asc"
+        }
+    }
+
+    get(fetchDepartments,(res)=>{
+        for(var i in res){
+            $('#department').append(`
+                <option did='${res[i].dept_id}'>${res[i].dept_name}</option>
+            `)
+        }
+
+        $('#department option:nth-child(2)').attr('selected',"selected")
+
+    })
+</script>
+<script defer>
+    $('#from').val(moment().day(1).format('MM/DD/YYYY'))
+    $('#to').val(moment().day(5).format('MM/DD/YYYY'))
+
+    var table = $('#attendanceTable').DataTable()
+    // waitForElement("#department", 3000).then(function() {
+    //     $("#loading").attr('hidden', "hidden")
+    //     $("#viewable").removeAttr('hidden')
+    //     var dates = [moment().day(1).format('YYYY-MM-DD'), moment().day(2).format('YYYY-MM-DD'), moment().day(3).format('YYYY-MM-DD'), moment().day(4).format('YYYY-MM-DD'), moment().day(5).format('YYYY-MM-DD')]
+    //
+    //     for (var i in dates) {
+    //         $("#dates").append(`<th><span class="vertical-header">${dates[i]}</span></th>`)
+    //     }
+    //
+    //     $('#from').val(moment(dates[0]).format('MM/DD/YYYY'))
+    //     $('#to').val(moment(dates[dates.length-1]).format('MM/DD/YYYY'))
+    //
+    //
+    //
+    //     table = $('#attendanceTable').DataTable({
+    //         rowId: "id",
+    //         "order": [[0, "asc"]],
+    //         columnDefs: [
+    //             {
+    //                 targets: 0,
+    //                 data: "full_name",
+    //                 class: "fw-bold",
+    //                 render: function (data, type, row, meta) {
+    //                     return ucwords(data)
+    //                 }
+    //             }, {
+    //                 targets: 1,
+    //                 width: "15%",
+    //                 class: "text-center",
+    //                 data: null,
+    //                 render: (data, type, row, meta) => {
+    //                     var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [], status: []}
+    //                     return status("Monday", tmp)
+    //                 }
+    //             }, {
+    //                 targets: 2,
+    //                 width: "15%",
+    //                 class: "text-center",
+    //                 data: null,
+    //                 render: (data, type, row, meta) => {
+    //                     var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [], status: []}
+    //                     return status("Tuesday", tmp)
+    //                 }
+    //             }, {
+    //                 targets: 3,
+    //                 width: "15%",
+    //                 class: "text-center",
+    //                 data: null,
+    //                 render: (data, type, row, meta) => {
+    //                     var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [], status: []}
+    //                     return status("Wednesday", tmp)
+    //                 }
+    //             }, {
+    //                 targets: 4,
+    //                 width: "15%",
+    //                 class: "text-center",
+    //                 data: null,
+    //                 render: (data, type, row, meta) => {
+    //                     var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [], status: []}
+    //                     return status("Thursday", tmp)
+    //                 }
+    //             }, {
+    //                 targets: 5,
+    //                 width: "15%",
+    //                 data: null,
+    //                 class: "text-center",
+    //                 render: (data, type, row, meta) => {
+    //                     var tmp = row.attendance !== null ? attendance(row.attendance) : {dates: [], status: []}
+    //                     return status("Friday", tmp)
+    //                 }
+    //             }
+    //         ]
+    //     })
+    //
+    //     var payload = {
+    //         table: `trainee_info left join attendance on (attendance.student_id = trainee_info.id and attendance.date >= '${moment().day(1).format("YYYY-MM-DD")}' and attendance.date <= '${moment().day(5).format("YYYY-MM-DD")}')`,
+    //         fields: ["concat(trainee_info.first_name,' ', trainee_info.middle_name,' ', trainee_info.last_name) as full_name", "group_concat(attendance.date,';',attendance.status) as attendance"],
+    //         where: [{
+    //             dept_id: `'${$("#department option:selected").attr('did')}'`,
+    //             acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`
+    //         }],
+    //         group_by: ["id"],
+    //         order_by: {
+    //             columns: ["full_name"],
+    //             order: "asc"
+    //         }
+    //     }
+    //
+    //     if (Number($("#department option:selected").attr('did')) === 1)
+    //         payload.where[0]["batch"] = $('#batch option:selected').attr('batch')
+    //
+    //
+    //     send(payload, table)
+    // })
+
+    function attendance(text) {
+        var d = text.split(',')
+        var r = []
+        var dates = []
+        var status = []
+        for (var i in d) {
+            var d2 = d[i].split(';')
+
+            dates.push(d2[0])
+            status.push(d2[1])
+
+        }
+        r = {
+            dates: dates,
+            status: status
+        }
+
+        return r
+    }
+
+    function status(dayName, tmp) {
+        var day = moment().day(dayName).format('YYYY-MM-DD')
+        if ($.inArray(day, tmp.dates) !== -1) {
+            if (tmp.status[tmp.dates.indexOf(day)] === 'Present')
+                return `<span class="text-success fw-bolder" style="font-size: 13pt">✓</span>`
+            else if (tmp.status[tmp.dates.indexOf(day)] === 'Permission')
+                return `<span class="text-primary fw-bolder" style="font-size: 13pt">P</span>`
+            else
+                return `<span class="text-danger fw-bolder" style="font-size: 13pt">ꭗ</span>`
+        } else {
+            return ``
+        }
+    }
+
+
+    function enableBatch(value){
+        if(value === "Computer Application") {
+            $("#batchcontainer").removeAttr("hidden")
+            $("#batch").removeAttr("disabled")
+        }
+        else{
+            $("#batchcontainer").attr("hidden","hidden")
+            $("#batch").attr("disabled","disabled")
+        }
+    }
+
+    var dates = []
+    var printData = {}
+
+    function process(){
+        $("#loading").attr('hidden', "hidden")
+        $("#viewable").removeAttr('hidden')
+
+        table.clear()
+        table.destroy()
+
+        var from = moment($('#from').val()).format('YYYY-MM-DD')
+        var to = moment($('#to').val()).format('YYYY-MM-DD')
+
+        var rangeStart = moment(from).subtract(1,'days').format('YYYY-MM-DD')
+        var rangeEnd = moment(to).add(1,'days').format('YYYY-MM-DD')
+
+        $("#dates").empty().append(`<th>Full Name</th>`)
+
+        var options = {
+            rowId: "id",
+            "order": [[0, "asc"]],
+            columnDefs: [
+                {
+                    targets: 0,
+                    data: "full_name",
+                    width: "25%",
+                    class: "fw-bold",
+                    render: function (data, type, row, meta) {
+                        return ucwords(data)
+                    }
+                }
+            ]
+        }
+
+        var i = from
+        var count = 1
+
+
+        while(moment(i).isBetween(rangeStart,rangeEnd)){
+            if(moment(i).weekday() >= 1 && moment(i).weekday() <= 5){
+                $("#dates").append(`<th><span class="vertical-header">${i}</span></th>`)
+                dates.push(i)
+
+                var tmp = {
+                    targets: count,
+                    class: "text-center",
+                    data: i,
+                    render: (data)=>{
+                        data === null ? '' : data
+                        if (data === 'Present')
+                            return `<span class="text-success fw-bolder" style="font-size: 13pt">✓</span>`
+                        else if (data === 'Permission')
+                            return `<span class="text-primary fw-bolder" style="font-size: 13pt">P</span>`
+                        else if (data === 'Absent')
+                            return `<span class="text-danger fw-bolder" style="font-size: 13pt">ꭗ</span>`
+                        else
+                            return ``
+                    }
+                }
+
+                options.columnDefs.push(tmp)
+                count += 1
+            }
+
+            i = moment(i).add(1,'days').format('YYYY-MM-DD')
+
+        }
+
+        table = $('#attendanceTable').DataTable(options)
+
+        waitForElement("#department", 3000).then(function() {
+            var payload = {
+                table: `trainee_info left join attendance on (attendance.student_id = trainee_info.id and attendance.date >= '${from}' and attendance.date <= '${to}')`,
+                fields: ["concat(trainee_info.first_name,' ', trainee_info.middle_name,' ',trainee_info.last_name) as full_name", "group_concat(attendance.date,';',attendance.status) as attendance"],
+                where: [{
+                    dept_id: `'${$("#department option:selected").attr('did')}'`,
+                    acadamic_year: `'${JSON.parse(localStorage.getItem('token')).academic_year}'`,
+                    "trainee_info.status": "'Enrolled'"
+                }],
+                group_by: ["id"],
+                order_by: {
+                    columns: ["full_name"],
+                    order: "asc"
+                }
+            }
+
+            if (Number($("#department option:selected").attr('did')) === 1)
+                payload.where[0]["batch"] = $('#batch option:selected').attr('batch')
+
+            get(payload, (res) => {
+                for (i in res) {
+                    var tmp = res[i].attendance === null ? {dates: [], status: []} : attendance(res[i].attendance)
+                    for (j in tmp.dates) {
+                        res[i][tmp.dates[j]] = tmp.status[j]
+                    }
+                }
+                table.rows.add(res).draw(false)
+                printData = res
+            })
+        })
+
+    }
+
+    process()
+
+    function handleExcel(){
+        $('#export').empty().append(`<span class="spinner-border spinner-border-sm text-white"></span>`)
+        var titles = []
+        var jsonData = []
+
+        $('#dates').children('th').each((index,element)=>{
+            if(index === 0){
+                titles.push("Full Name")
+            }
+            else{
+                titles.push($(element).children("span.vertical-header").html().trim())
+            }
+
+        })
+
+        table.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var row = table.cells( rowIdx,'' ).render( 'display' )
+            var tmp = {}
+
+            for(i in titles){
+                if(i != 0) {
+                    if (row[i] === ''){
+                        tmp[titles[i]] = row[i]
+                    }
+                    else {
+                        tmp[titles[i]] = $(row[i]+ "span").html()
+                    }
+                }
+                else{
+                    tmp[titles[i]] = row[i]
+                }
+            }
+            jsonData.push(tmp)
+        })
+
+        const csv = jsonToCsv(jsonData)
+
+        downloadBlob(csv, 'attendance.csv', 'text/csv;charset=unicode(hex);')
+        $('#export').empty().append(`<i class="fa fa-file-excel"></i>`)
+    }
+
+    function handlePrinting() {
+
+        var headers = []
+        var titles = []
+        var jsonData = []
+
+        $('#dates').children('th').each((index,element)=>{
+            if(index === 0){
+                var tmp = {
+                    field: "full_name",
+                    displayName: $(element).html().trim()
+                }
+                headers.push(tmp)
+                titles.push("full_name")
+            }
+            else{
+                var tmp = {
+                    field: $(element).children("span.vertical-header").html().trim(),
+                    displayName: $(element).children("span.vertical-header").html().trim()
+                }
+                headers.push(tmp)
+                titles.push($(element).children("span.vertical-header").html().trim())
+            }
+
+        })
+
+        table.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var row = table.cells( rowIdx,'' ).render( 'display' )
+            var tmp = {}
+
+            for(i in titles){
+                tmp[titles[i]] = row[i]
+            }
+            jsonData.push(tmp)
+        })
+
+        console.log(jsonData)
+        printJS({
+            printable: jsonData,
+            properties: headers,
+            header: `<div class="row">
+                        <div class="col">
+                        <h3 class="c-grey-900">Attendance</h3>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: -20px">
+                        <div class="col">
+                        <h7 class="c-grey-900">Department: ${$('#department option:selected').html()}</h7>
+                        </div>
+                    </div>`,
+            css: "./assets/css/print.css",
+            type: 'json'
+        })
+
+    }
+</script>

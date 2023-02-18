@@ -1,0 +1,408 @@
+<div id="loading">
+    <div class="spinner"></div>
+</div>
+<div class="bgc-white bd bdrs-3 p-20 mB-20" id="viewable" hidden>
+    <div class="row">
+        <div class="col-10">
+            <div class="row">
+                <div class="col-3 w-50"><h4 class="c-grey-900 mB-20">Registration Form</h4></div>
+                <div class="col-2 mL-0"><input disabled class="form-control" style="display: none" id="accYear"></div>
+            </div>
+        </div>
+        <div class="col-2 d-flex flex-row-reverse">
+            <button class="btn btn-primary mB-20 mL-10" title="Import" id="import"><i class="fa fa-arrow-down"></i> Import</button>
+        </div>
+    </div>
+    <form class="p-20" id="registrationForm" onsubmit="register(event)">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="label">First Name</label>
+                <div class="form-group">
+                    <input autocapitalize="on" type="text" placeholder="First Name" id="first_name" name="first_name" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="label">Middle Name</label>
+                <div class="form-group">
+                    <input type="text" placeholder="Middle Name" name="middle_name" id="middle_name" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="label">Last Name</label>
+                <div class="form-group">
+                    <input type="text" placeholder="Last Name" name="last_name" id="last_name" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label class="label">Birthdate</label>
+                <div class="form-group">
+                    <input type="text" class="form-control bdc-grey-200 start-date" placeholder="Birthdate" name="birthdate" id="birthdate" data-provide="datepicker">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="label">Gender</label>
+                <div>
+                    <div class="custom-control-inline custom-radio mb-3 ml-5">
+                        <input name="gender" class="custom-control-input" id="male" type="radio" value="M">
+                        <label class="custom-control-label" for="male">Male</label>
+                    </div>
+                    <div class="custom-control-inline custom-radio mb-3 ml-5 mt-2">
+                        <input name="gender" class="custom-control-input" id="female" checked="" type="radio" value="F">
+                        <label class="custom-control-label" for="female">Female</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="label">National ID</label>
+                <div class="form-group">
+                    <input type="text" placeholder="2243567 or 13245-00156" id="nid" name="nationalID" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label class="label">Department</label>
+                <div class="form-group">
+                    <select class="custom-select" name="department" id="department" onchange="enableBatch(this.value)">
+                        <option disabled="disabled" selected="selected">Choose Department</option>
+
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <label class="label">Level</label>
+                <div class="form-group">
+                    <select class="custom-select" name="level" id="level">
+                        <option disabled="disabled" selected="selected">Choose Level</option>
+                        <option level="1">Level 1</option>
+                        <option level="2">Level 2</option>
+                        <option level="3">Level 3</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col" id="batchcontainer" hidden>
+                <label class="label">Batch</label>
+                <div class="form-group">
+                    <select class="custom-select" name="batch" id="batch">
+                        <option disabled="disabled">Choose Batch</option>
+                        <option batch="1" selected>Batch 1</option>
+                        <option batch="2">Batch 2</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <label class="label">Ethnicity</label>
+                <div class="form-group">
+                    <select class="custom-select" name="ethnicity" id="ethnicity">
+                        <option disabled="disabled" selected="selected">Choose Ethnicity</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="label">Company</label>
+                <div class="form-group">
+                    <select class="custom-select" name="company" id="company">
+                        <option disabled="disabled" selected="selected">Choose Company</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label class="label">Phone Number</label>
+                <div class="form-group" id="pno">
+                    <input type="text" placeholder="Phone Number" name="phone" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="label">Education Level</label>
+                <div class="form-group">
+                    <input type="text" placeholder="10 or 12+4" name="edu_level" id="edu_level" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="label">Experience</label>
+                <div class="form-group">
+                    <input type="text" placeholder="Experience" name="experience" id="experience" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="row-lg-5 text-right my-4">
+            <button type="submit" class="btn btn-primary" id="registerButton">Save</button>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(()=>{
+        var fetchAccYear = {
+            table: "settings",
+            fields: ["concat(year(acadamic_start),'/',year(acadamic_end)) as accYear"],
+            where: [{
+                seid: '1'
+            }]
+        }
+        get(fetchAccYear,(res)=>{
+            $("#accYear").val(res[0].accYear)
+        })
+        $("#loading").attr("hidden","hidden")
+        $("#viewable").removeAttr("hidden")
+
+        document.querySelector("#import").addEventListener('click',(event)=>{
+            $("#import").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+            $('#mainContent').load('views/admin/import.html')
+        })
+    })
+</script>
+<script defer>
+    var fetchEthnicity = {
+        table: "ethnic_groups",
+        fields: ["*"],
+        order_by: {
+            columns: ["ethnicity_name"],
+            order: "asc"
+        }
+    }
+    var fetchCompanies = {
+        table: "companies",
+        fields: ["*"],
+        order_by: {
+            columns: ["company_name"],
+            order: "asc"
+        }
+    }
+    var fetchDepartments = {
+        table: "departments",
+        fields: ["dept_id","dept_name","shortname"],
+        order_by: {
+            columns: ["dept_name"],
+            order: "asc"
+        }
+    }
+    get(fetchEthnicity,(res)=>{
+        for(var i in res){
+            $('#ethnicity').append(`
+                <option eid='${res[i].ethnicity_id}'>${res[i].ethnicity_name}</option>
+            `)
+        }
+
+    })
+    get(fetchCompanies,(res)=>{
+        for(var i in res){
+            $('#company').append(`
+                <option cid='${res[i].company_id}'>${res[i].company_name}</option>
+            `)
+        }
+
+    })
+    get(fetchDepartments,(res)=>{
+        for(var i in res){
+            $('#department').append(`
+                <option did='${res[i].dept_id}' sname='${res[i].shortname}'>${res[i].dept_name}</option>
+            `)
+        }
+
+    })
+
+    var options ={
+        rules: {
+            first_name: {
+                required: true,
+                regex: /^[A-Za-z]*$/,
+                normalizer: function(value) {
+                    return $.trim(value);
+                }
+            },
+            middle_name: {
+                required: true,
+                regex: /^[A-Za-z]*$/,
+                normalizer: function(value) {
+                    return $.trim(value);
+                }
+            },
+            last_name: {
+                required: true,
+                regex: /^[A-Za-z]*$/,
+                normalizer: function(value) {
+                    return $.trim(value);
+                }
+            },
+            birthdate: {
+                required: true
+            },
+            ethnicity: {
+                required: true
+            },
+            company: {
+                required: true
+            },
+            edu_level: {
+                required: true,
+                regex: /^([0-9]{1,2}|[0-9]{1,2}\+[1-5]{1})$/
+            },
+            experience: {
+                required: true,
+                regex: /^[0-9]*$/,
+            },
+            department: {
+                required: true
+            },
+            level: {
+                required: true
+            },
+            nationalID: {
+                regex: /^([0-9]{7}|[0-9]{5}-[0-9]{5})$/
+            }
+        },
+        validClass: "is-valid",
+        errorClass: "is-invalid",
+        messages: {
+            nationalID: {
+                regex: "The ID given is not valid."
+            },
+            edu_level: {
+                regex: "The education level entered is not valid."
+            }
+        }
+    }
+
+    function enableBatch(value){
+        if(value === "Computer Application") {
+            $("#batchcontainer").removeAttr("hidden")
+            $('#batch').rules("add",{
+                required: true
+            })
+        }
+        else{
+            $("#batchcontainer").attr("hidden","hidden")
+            $("#batch").rules("remove")
+        }
+    }
+
+    $.validator.addMethod(
+        "regex",
+        function(value, element, regexp)
+        {
+            if (regexp.constructor != RegExp)
+                regexp = new RegExp(regexp);
+            else if (regexp.global)
+                regexp.lastIndex = 0;
+            return this.optional(element) || regexp.test(value);
+        },
+        "You have used an invalid character."
+    )
+
+    $("#registrationForm").validate(options)
+
+    function register(event){
+        event.preventDefault()
+
+        if($('#registrationForm').valid()){
+            $("#registerButton").empty().append("Saving").append(`<span class="spinner-border spinner-border-sm text-white mL-10"></span>`).prop('disabled',true)
+            var formData = $("#registrationForm").serializeArray()
+            var final = {}
+            formData.map(value=>{
+                final[value.name] = "'" + ucwords(value.value) + "'"
+            })
+            final["department"] = $("#department option:selected").attr("did")
+            final["company"] = $("#company option:selected").attr("cid")
+            final["ethnicity"] = $("#ethnicity option:selected").attr("eid")
+            final["level"] = $("#level option:selected").attr("level")
+            final["batch"] = final["department"] === "1" ? $("#batch option:selected").attr("batch") : "1"
+            final["status"] = "'Enrolled'"
+            final["acadamic_year"] = "'"+$("#accYear").val()+"'"
+            final["birthdate"] = "'" + moment($('#birthdate').val()).format("YYYY-MM-DD") + "'"
+
+            var student_id = {
+                table: "trainee_info",
+                fields: ["count(*) as count"],
+                where: [{
+                    dept_id: final["department"],
+                    acadamic_year: final["acadamic_year"]
+                }]
+            }
+            final["department"] === "1" ? student_id.where[0]["batch"] = final["batch"] : ''
+
+            var checkStudent = {
+                table: "trainee_info",
+                fields: ["count(*) as count"],
+                where: [{
+                  first_name: final.first_name,
+                  middle_name: final.middle_name,
+                  last_name: final.last_name,
+                  gender: final.gender,
+                  birthdate: final.birthdate
+                }]
+            }
+
+            get(checkStudent,(res)=>{
+                if(Number(res[0].count) > 0 ){
+                    if(confirm("The student took a course here before. Do you want to continue?")){
+                        new Promise(resolve => {
+                            get(student_id,(res)=>{
+                                var current = Number(res[0].count)
+                                var next = current + 1 <= 9 ? "0"+(current + 1) : current + 1
+                                var acc = $("#accYear").val().split('/')
+                                var accCode = acc[0].substr(acc[0].length-2,2) + acc[1].substr(acc[1].length-2,2)
+
+                                final["student_id"] = "'" + $("#department option:selected").attr("sname") + "-" + accCode + "-" + "B" + final["batch"] + "L1" + "-" + next + "'"
+                                resolve("done")
+                            })
+                        }).then((value)=>{
+                            if(value === "done"){
+                                var studentData = {
+                                    table: "trainee_info",
+                                    fields: ["first_name","middle_name","last_name","birthdate","gender","national_id","dept_id","level","ethnicity_id","company_id","phone_number","edu_level","experience","batch","status","acadamic_year","student_id"],
+                                    rows: [Object.values(final)]
+                                }
+                                set(studentData,(res)=>{
+                                    if(res.success === "true"){
+                                        showNotification("top","center","success","Student registered successfully.")
+                                        $("#mainContent").load("views/admin/register.html")
+                                    }
+                                    else
+                                        showNotification("top","center","danger",res.message)
+                                })
+                            }
+                        })
+                    }
+                    else{
+                        $("#mainContent").load("views/admin/register.html")
+                    }
+                }
+                else{
+                    new Promise(resolve => {
+                        get(student_id,(res)=>{
+                            var current = Number(res[0].count)
+                            var next = current + 1 <= 9 ? "0"+(current + 1) : current + 1
+                            var acc = $("#accYear").val().split('/')
+                            var accCode = acc[0].substr(acc[0].length-2,2) + acc[1].substr(acc[1].length-2,2)
+
+                            final["student_id"] = "'" + $("#department option:selected").attr("sname") + "-" + accCode + "-" + "B" + final["batch"] + "L1" + "-" + next + "'"
+                            resolve("done")
+                        })
+                    }).then((value)=>{
+                        if(value === "done"){
+                            var studentData = {
+                                table: "trainee_info",
+                                fields: ["first_name","middle_name","last_name","birthdate","gender","national_id","dept_id","level","batch","ethnicity_id","company_id","phone_number","edu_level","experience","status","acadamic_year","student_id"],
+                                rows: [Object.values(final)]
+                            }
+                            set(studentData,(res)=>{
+                                if(res.success === "true") {
+                                    showNotification("top", "center", "success", "Student registered successfully.")
+                                    $("#mainContent").load("views/admin/register.html")
+                                }
+                                else
+                                    showNotification("top","center","danger",res.message)
+                            })
+                        }
+                    })
+                }
+            })
+        }
+    }
+</script>

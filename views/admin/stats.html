@@ -1,0 +1,275 @@
+<div id="loading">
+    <div class="spinner"></div>
+</div>
+<div class="bgc-white bd bdrs-3 p-20 mB-20" id="viewable" hidden>
+    <div class="row">
+        <div class="col-10">
+            <div class="row">
+                <div class="col-1">
+                    <h4 class="c-grey-900 mB-20">Stats</h4>
+                </div>
+                <div class="col-3">
+                    <select id="academic_year" class="form-control" onchange="changeCategory($('#category'))">
+                    <option selected="selected" disabled>By Academic Year</option>
+                </select>
+                </div>
+                <div class="col-3">
+                    <select id="category" class="form-control" onchange="changeCategory(this)">
+                        <option disabled>Select Category</option>
+                        <option selected>Companies</option>
+                        <option>Department</option>
+                        <option>Companies in Department</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="col-2 d-flex flex-row-reverse">
+            <button class="btn btn-primary mB-20 mL-10" title="Print" onclick="handlePrinting()"><i class="fa fa-print"></i></button>
+            <button class="btn btn-success mB-20" title="Export" id="export" onclick="handleExcel()"><i class="fa fa-file-excel"></i></button>
+        </div>
+    </div>
+    <table id="statDataTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+        <tr id="tableHead">
+
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+<script>
+    $(document).ready(()=>{
+        $("#loading").attr("hidden","hidden")
+        $("#viewable").removeAttr("hidden")
+    })
+</script>
+<script defer>
+    var table
+    var fetchAcademicYears = {
+        table: "trainee_info",
+        fields: ["distinct acadamic_year as academic_years"],
+        order_by: {
+            columns: ["academic_years"],
+            order: "desc"
+        }
+    }
+    get(fetchAcademicYears,(res)=>{
+        for (var i in res) {
+            if(res[i].academic_years === JSON.parse(localStorage.getItem("token")).academic_year)
+                $("#academic_year").append(`<option selected>${res[i].academic_years}</option>`)
+            else
+                $("#academic_year").append(`<option>${res[i].academic_years}</option>`)
+        }
+        var fetchCompaniesData = {
+            table: "trainee_info join companies on companies.company_id = trainee_info.company_id",
+            fields: ["companies.company_name as Company", "count(*) as Total, count(case when gender='M' then 1 end) as Males", "count(case when gender='F' then 1 end) as Females", "count(case when status!='Enrolled' then 1 end) as `Dropped Out`"],
+            where: [{
+                "trainee_info.acadamic_year": "'" + $("#academic_year option:selected").html() + "'"
+            }],
+            group_by: ["Company"],
+            order_by: {
+                columns: ["Company"],
+                order: "asc"
+            }
+        }
+
+        get(fetchCompaniesData,(res)=>{
+            var keys = Object.keys(res[0])
+
+            if(keys.length !== 0){
+                for (var i in keys) {
+                    $("#tableHead").append(`<th>${keys[i]}</th>`)
+                }
+                table =  $('#statDataTable').DataTable({
+                    autoSize: true,
+                    columnDefs: [
+                        {
+                            targets: 0,
+                            data: "Company",
+                            class: "fw-bold",
+                            render: function(data){
+                                return ucwords(data)
+                            }
+                        },{
+                            targets: 1,
+                            data:"Total",
+                            class: "fw-bold w-1r",
+                        }
+                        ,{
+                            targets: 2,
+                            data:"Males",
+                            class: "fw-bold w-1r",
+                        }
+                        ,{
+                            targets: 3,
+                            data:"Females",
+                            class: "fw-bold w-1r",
+                        }
+                        ,{
+                            targets: 4,
+                            data:"Dropped Out",
+                            class: "fw-bold w-1r",
+                        }
+                    ]
+                })
+
+                table.rows.add(res).draw(false)
+            }
+        })
+    })
+
+    function changeCategory(elem){
+        var selected = $(elem).children("option:selected").html()
+        var fetchData
+
+        table.clear()
+        table.destroy()
+        $("#tableHead").empty()
+
+        if(selected === "Companies") {
+            fetchData = {
+                table: "trainee_info join companies on companies.company_id = trainee_info.company_id",
+                fields: ["companies.company_name as Company", "count(*) as Total, count(case when gender='M' then 1 end) as Males", "count(case when gender='F' then 1 end) as Females", "count(case when status!='Enrolled' then 1 end) as `Dropped Out`"],
+                where: [{
+                    "trainee_info.acadamic_year": "'" + $('#academic_year option:selected').html() + "'"
+                }],
+                group_by: ["Company"],
+                order_by: {
+                    columns: ["Company"],
+                    order: "asc"
+                }
+            }
+        }
+        else if(selected === "Department"){
+            fetchData = {
+                table: "trainee_info join departments on departments.dept_id = trainee_info.dept_id",
+                fields: ["departments.dept_name as Department", "count(*) as Total, count(case when gender='M' then 1 end) as Males", "count(case when gender='F' then 1 end) as Females", "count(case when status!='Enrolled' then 1 end) as `Dropped Out`"],
+                where: [{
+                    "trainee_info.acadamic_year": "'" + $('#academic_year option:selected').html() + "'"
+                }],
+                group_by: ["Department"],
+                order_by: {
+                    columns: ["Department"],
+                    order: "asc"
+                }
+            }
+        }
+        else if(selected === "Companies in Department"){
+            fetchData = {
+                table: "trainee_info join companies on companies.company_id = trainee_info.company_id",
+                fields: ["companies.company_name as Company", "count(*) as Total, count(case when dept_id=1 then 1 end) as `Computer Application`","count(case when dept_id=2 then 1 end) as `Computer Networking`","count(case when dept_id=3 then 1 end) as Electricity","count(case when dept_id=4 then 1 end) as Electronics","count(case when dept_id=5 then 1 end) as `HVAC-R`","count(case when dept_id=6 then 1 end) as `Metal Works`","count(case when dept_id=7 then 1 end) as `Wood Works`"],
+                where: [{
+                    "trainee_info.acadamic_year": "'" + $('#academic_year option:selected').html() + "'"
+                }],
+                group_by: ["Company"],
+                order_by: {
+                    columns: ["Company"],
+                    order: "asc"
+                }
+            }
+        }
+
+        get(fetchData,(res) => {
+            var keys = Object.keys(res[0])
+
+            if(keys.length > 0 ){
+                new Promise(resolve => {
+                    for (var i in keys) {
+                        $("#tableHead").append(`<th>${keys[i]}</th>`)
+                    }
+                    resolve("done")
+                }).then(value => {
+                    if(value === "done"){
+                        var options = {
+                            autoSize: true,
+                            columnDefs: []
+                        }
+                        for (var i in keys) {
+                            if(Number(i) === 0) {
+                                var tmp = {
+                                    targets: Number(i),
+                                    data: keys[i],
+                                    class: "fw-bold",
+                                    render: function (data) {
+                                        return ucwords(data)
+                                    }
+                                }
+                                options.columnDefs.push(tmp)
+                            }
+                            else{
+                                var tmp = {
+                                    targets: Number(i),
+                                    data: keys[i],
+                                    class: "fw-bold w-1r"
+                                }
+                                options.columnDefs.push(tmp)
+                            }
+                        }
+                        table = $("#statDataTable").DataTable(options)
+                        table.rows.add(res).draw(false)
+                    }
+                })
+
+            }
+        })
+    }
+
+    function handleExcel(){
+        $('#export').empty().append(`<span class="spinner-border spinner-border-sm text-white"></span>`)
+        var realData = table.rows({order: 'applied',search: 'applied'}).data().toArray()
+
+        const csv = jsonToCsv(realData)
+
+        downloadBlob(csv, 'stats.csv', 'text/csv;charset=utf-8;')
+        $('#export').empty().append(`<i class="fa fa-file-excel"></i>`)
+    }
+
+    function handlePrinting() {
+        var jsonData = table.rows({order: 'applied',search: 'applied'}).data()
+        var tmpArray = jsonData.toArray()[0]
+        var keys = Object.keys(tmpArray)
+
+        var options = {
+            printable: jsonData,
+            properties: [
+
+            ],
+            header: `<div class="row"><div class="col"><h3 class="m-0">Stats ${$("#academic_year option:selected").html()}</h3></div></div>`,
+            style: `@page { size: A4 landscape}
+                          .row {
+                          display: -ms-flexbox;
+                          display: flex;
+                          -ms-flex-wrap: wrap;
+                              flex-wrap: wrap;
+                          }
+                          .col {
+                              -ms-flex-preferred-size: 0;
+                                  flex-basis: 0;
+                              -ms-flex-positive: 1;
+                                  flex-grow: 1;
+                              max-width: 100%;
+                            }
+                          td {
+                            text-transform: capitalize;
+                            margin-left: 150px,
+
+                         }
+                         td:not(:first-child) {
+                            text-align: center
+                         }
+                        `,
+            type: 'json'
+        }
+
+        for( var i in keys){
+            options.properties.push({
+                field: keys[i],
+                displayName: keys[i]
+            })
+        }
+        printJS(options)
+    }
+
+</script>
